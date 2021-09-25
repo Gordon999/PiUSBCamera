@@ -9,6 +9,8 @@ Click mouse on the left of a button to decrease, right to increase
 
 Should detect the USB camera, or a pi camera, and set the appropriate control buttons.
 
+Requires opencv installed sudo apt-get install python3-opencv
+
 ## Screenshot
 
 ![screenshot](screen002.jpg)
