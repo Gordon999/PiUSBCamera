@@ -8,8 +8,8 @@ import cv2
 import time
 
 # preview window
-cwidth  = 640
-cheight = 480
+cwidth  = 800
+cheight = 600
 
 # camera resolution for taking pictures
 width  = 1280
@@ -50,7 +50,7 @@ with open("cam_ctrls.txt", "r") as file:
     while line:
         config.append(line.strip())
         line = file.readline()
-print (config)
+
 parameters = []
 for x in range(0,len(config)):
     fet = config[x].split(' ')
