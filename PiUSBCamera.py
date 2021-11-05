@@ -7,7 +7,7 @@ import datetime
 import cv2
 import time
 
-# version 7
+# version 8
 
 # auto detect camera format
 auto_detect = 1 # set to 1 to enable auto detect, will override window and resolution values set below
@@ -319,7 +319,7 @@ while True:
                             # set to video camera resolution
                             cam = pygame.camera.Camera(path,(vwidth,vheight))
                             cam.start()
-                        vid_cod = cv2.VideoWriter_fourcc(*'XVID')
+                        vid_cod = cv2.VideoWriter_fourcc(*'MP4V')
                         # make video filename YYMMDDHHMMSS.mp4
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
