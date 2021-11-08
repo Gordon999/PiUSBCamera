@@ -26,7 +26,7 @@ video_height = 960
 
 # limit above which cv2 is used to capture video, as opposed to pygame.
 # Enables Philips 740/900 USB cameras to work at 640x480 if set for 640, and video_width = 640 and video_height = 480
-vlimit = 400
+vlimit = 640
 
 # show every sframe during video recording
 sframe = 10
