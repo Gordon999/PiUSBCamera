@@ -9,7 +9,7 @@ Click mouse on the left of a button to decrease, right to increase
 
 Click on image to restore camera default settings
 
-Should detect the USB camera, or a pi camera, and set the appropriate control buttons.
+Should detect the USB camera, or a pi camera (not using BULLSEYE), and set the appropriate control buttons.
 
 Requires opencv installed, use  sudo apt-get install python3-opencv
 
