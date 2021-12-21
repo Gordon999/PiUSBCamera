@@ -321,7 +321,7 @@ while True:
                         # make still filename YYMMDDHHMMSS.bmp
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
-                        fname =  pic_dir + str(timestamp) + '.bmp'
+                        fname =  pic_dir + str(timestamp) + '.jpg'
                         pygame.image.save(pic_image,fname)
                         cam.stop()
                     else:
