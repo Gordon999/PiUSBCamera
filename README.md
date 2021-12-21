@@ -5,6 +5,8 @@ Script to allow control of a USB Camera on a Pi, using v4l2-ctl, to allow parame
 
 Shows a reduced preview but saves stills / video at max resolutions or user set.
 
+Videos are video ONLY , NO audio.
+
 Click mouse on the left of a button to decrease, right to increase
 
 Click on image to restore camera default settings
