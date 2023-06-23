@@ -25,7 +25,7 @@ import datetime
 import cv2
 import time
 
-# version 1.4, modified for Bullseye, HDMI Video Capture adaptor added
+# version 1.5, modified for Bullseye, HDMI Video Capture adaptor added
 
 # auto detect camera format
 auto_detect = 1 # set to 1 to enable auto detect, may override window and will override resolution values set below
@@ -39,19 +39,22 @@ still_width  = 1280
 still_height = 960
 
 # video camera resolution
-video_width  = 1920
-video_height = 1080
-
-# limit above which cv2 is used to capture video, as opposed to pygame.
-# Enables Philips 740/900 USB cameras to work at 640x480 if set for 640, and video_width = 640 and video_height = 480
-vlimit = 640
+video_width  = 1280
+video_height = 960
 
 # show every sframe during video recording
 sframe = 10
 
 # save pictures and videos to..
-pic_dir = "/home/pi/Pictures/"
-vid_dir = "/home/pi/Videos/"
+# default directories and files
+pic         = "Pictures"
+vid         = "Videos"
+
+# setup directories
+Home_Files  = []
+Home_Files.append(os.getlogin())
+pic_dir     = "/home/" + Home_Files[0]+ "/" + pic + "/"
+vid_dir     = "/home/" + Home_Files[0]+ "/" + vid + "/"
 
 # set button sizes
 bw = 160 
@@ -329,22 +332,10 @@ while True:
                         button(0,1)
                         text(0,3,0,1,"STOP",ft,0)
                         text(0,3,1,1,"Video",ft,0)
-                        if video_width > vlimit:
-                            # use Cv2
-                            print (usb)
-                            if usb == 0: 
-                                vid_capture = cv2.VideoCapture(0)
-                            if usb == 1: 
-                                vid_capture = cv2.VideoCapture(1)
-                            # set to video camera resolution
-                            if still_height != 1200:
-                                vid_capture.set(3,video_width)
-                                vid_capture.set(4,video_height)
-                        else:
-                            # use pygame
-                            # set to video camera resolution
-                            cam = pygame.camera.Camera(path,(video_width,video_height))
-                            cam.start()
+                        # use pygame
+                        # set to video camera resolution
+                        cam = pygame.camera.Camera(path,(video_width,video_height))
+                        cam.start()
                         vid_cod = cv2.VideoWriter_fourcc(*'MP4V')
                         # make video filename YYMMDDHHMMSS.mp4
                         now = datetime.datetime.now()
@@ -362,27 +353,14 @@ while True:
                                     # stop video recording
                                     if mousex > preview_width and mousey < bh:
                                        stop = 1
-                            if video_width > vlimit:
-                                # use cv2 to record video
-                                ret,frame = vid_capture.read()
-                                dim = (video_width, video_height)
-                                frame = cv2.resize(frame,dim, interpolation = cv2.INTER_AREA)
-                                output.write(frame)
-                                count +=1
-                                if count == sframe:
-                                    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                                    img = pygame.surfarray.make_surface(img)
-                                    img = pygame.transform.rotate(img,270)
-                                    image = pygame.transform.flip(img, True, False)
-                            else:
-                                # use pygame to record video
-                                image = cam.get_image()
-                                count +=1
-                                img = pygame.transform.rotate(image,270)
-                                img = pygame.transform.flip(img, True, False)
-                                img = pygame.surfarray.array3d(img)
-                                frame = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                                output.write(frame)
+                            # use pygame to record video
+                            image = cam.get_image()
+                            count +=1
+                            img = pygame.transform.rotate(image,270)
+                            img = pygame.transform.flip(img, True, False)
+                            img = pygame.surfarray.array3d(img)
+                            frame = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                            output.write(frame)
                             # show frame during recording
                             if count == sframe:
                                 count = 0
@@ -391,10 +369,7 @@ while True:
                                 windowSurfaceObj.blit(catSurfaceObj,(0,0))
                                 pygame.draw.rect(windowSurfaceObj,(255,0,0),Rect(10,10,20,20))
                                 pygame.display.update()
-                        if video_width > vlimit:
-                            vid_capture.release()
-                        else:
-                            cam.stop()
+                        cam.stop()
                         output.release()
                     button(0,0)
                     text(0,1,0,1,"CAPTURE",ft,7)
