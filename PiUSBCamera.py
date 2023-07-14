@@ -336,7 +336,7 @@ while True:
                         # set to video camera resolution
                         cam = pygame.camera.Camera(path,(video_width,video_height))
                         cam.start()
-                        vid_cod = cv2.VideoWriter_fourcc(*'MP4V')
+                        vid_cod = cv2.VideoWriter_fourcc(*'MJPG')
                         # make video filename YYMMDDHHMMSS.mp4
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
