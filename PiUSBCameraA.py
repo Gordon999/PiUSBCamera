@@ -360,7 +360,7 @@ while True:
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
                         text(0,3,0,0,"CAPTURING: " + vid_dir + timestamp + '.mp4',ft,0)
-                        cmd = 'ffmpeg -f v4l2 -framerate 25 -video_size ' + str(video_width) + "x" + str(video_height) + ' -i ' + path + ' -ar 44100 -f pulse -thread_queue_size 5000 -i default -codec:a aac -t 0' + str(td) + ' ' + vid_dir + timestamp + '.mp4'
+                        cmd = 'ffmpeg -f v4l2 -framerate 30 -video_size ' + str(video_width) + "x" + str(video_height) + ' -i ' + path + ' -ar 44100 -f pulse -thread_queue_size 5000 -i default -codec:a aac -t 0' + str(td) + ' ' + vid_dir + timestamp + '.mp4'
                         # print(cmd)
                         os.system(cmd)
                     button(0,0)
