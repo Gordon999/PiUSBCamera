@@ -30,7 +30,7 @@ import signal
 # version 1.6, modified for Bullseye, HDMI Video Capture adaptor added
 
 # auto detect camera format
-auto_detect = 1 # set to 1 to enable auto detect, may override window and will override resolution values set below
+auto_detect = 1 # set to 1 to enable auto detect, may override window and will override still resolution values set below
 
 # preview window
 preview_width  = 800
@@ -42,7 +42,7 @@ still_height = 960
 
 # video camera resolution
 video_width  = 1280
-video_height = 960
+video_height = 720
 
 # show every sframe during video recording
 sframe = 10
@@ -248,7 +248,6 @@ pygame.display.set_caption('Pi USB Camera')
 
 camera_controls()
 camera_controls()
-print (len(parameters))
 
 def setup_screen():
     global parameters,preview_height,bh
@@ -338,7 +337,7 @@ while True:
                         # make video filename YYMMDDHHMMSS.mp4
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
-                        cmd = 'ffmpeg -f v4l2 -framerate 10 -video_size 1280x720 -i /dev/video0 ' + vid_dir + timestamp + '.mp4'
+                        cmd = 'ffmpeg -f v4l2 -framerate 10 -video_size ' + str(video_width) + "x" + str(video_height) + ' -i /dev/video0 ' + vid_dir + timestamp + '.mp4'
                         p = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
                         stop = 0
                         count = 0
@@ -351,18 +350,31 @@ while True:
                                     mousex, mousey = event.pos
                                     # stop video recording
                                     if mousex > preview_width and mousey < bh:
+                                       text(0,3,0,1,"STOPPING...",ft,0)
+                                       text(0,3,1,1," ",ft,0)
                                        poll = p.poll()
                                        if poll == None:
                                            os.killpg(p.pid, signal.SIGTERM)
                                            time.sleep(5)
+                                               
                                        stop = 1
                     button(0,0)
                     text(0,1,0,1,"CAPTURE",ft,7)
                     text(0,1,1,1,"Still",ft,7)
                     text(0,1,1,1,"Video",ft,7)
-                    # restart preview   
-                    cam = pygame.camera.Camera(path,(preview_width,preview_height))
-                    cam.start()
+                    # restart preview
+                    if os.path.exists('/dev/video0'):
+                        usb = 0
+                        cam = pygame.camera.Camera("/dev/video0",(preview_width,preview_height))
+                        path = '/dev/video0'
+                        cam.start()
+                    elif os.path.exists('/dev/video1'):
+                        usb = 1
+                        cam = pygame.camera.Camera("/dev/video1",(preview_width,preview_height))
+                        path = '/dev/video1'
+                        cam.start()
+                    #cam = pygame.camera.Camera(path,(preview_width,preview_height))
+                    #cam.start()
                 else:
                     # change a camera parameter
                     p = int(parameters[((button_row -2)*6) + 5])
