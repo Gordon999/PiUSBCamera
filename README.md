@@ -1,4 +1,4 @@
-# PiUSBCamera
+6# PiUSBCamera
 
 
 Script to allow control of a USB Camera on a Pi, using v4l2-ctl, to allow parameters to be set and still pictures or videos to be taken. 
@@ -21,7 +21,7 @@ sudo apt install libsdl2-ttf-2.0-0
 
 and
 
-python3 -m pip3 install -U pygame --user
+python3 -m pip3 install -U pygame --user ( if you get an error try pip instead of pip3)
 
 ## Screenshot
 
