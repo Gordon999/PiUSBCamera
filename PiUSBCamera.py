@@ -24,8 +24,10 @@ import pygame.camera
 import datetime
 import cv2
 import time
+import subprocess
+import signal
 
-# version 1.5, modified for Bullseye, HDMI Video Capture adaptor added
+# version 1.6, modified for Bullseye, HDMI Video Capture adaptor added
 
 # auto detect camera format
 auto_detect = 1 # set to 1 to enable auto detect, may override window and will override resolution values set below
@@ -321,7 +323,7 @@ while True:
                         cam = pygame.camera.Camera(path,(still_width,still_height))
                         cam.start()
                         pic_image = cam.get_image()
-                        # make still filename YYMMDDHHMMSS.bmp
+                        # make still filename YYMMDDHHMMSS.jpg
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
                         fname =  pic_dir + str(timestamp) + '.jpg'
@@ -332,15 +334,12 @@ while True:
                         button(0,1)
                         text(0,3,0,1,"STOP",ft,0)
                         text(0,3,1,1,"Video",ft,0)
-                        # use pygame
-                        # set to video camera resolution
-                        cam = pygame.camera.Camera(path,(video_width,video_height))
-                        cam.start()
-                        vid_cod = cv2.VideoWriter_fourcc(*'MJPG')
+                        
                         # make video filename YYMMDDHHMMSS.mp4
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
-                        output = cv2.VideoWriter(vid_dir + timestamp + ".mp4", vid_cod, int(9600/video_width), (video_width,video_height))
+                        cmd = 'ffmpeg -f v4l2 -framerate 10 -video_size 1280x720 -i /dev/video0 ' + vid_dir + timestamp + '.mp4'
+                        p = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
                         stop = 0
                         count = 0
                         start_video = time.monotonic()
@@ -352,25 +351,10 @@ while True:
                                     mousex, mousey = event.pos
                                     # stop video recording
                                     if mousex > preview_width and mousey < bh:
+                                       poll = p.poll()
+                                       if poll == None:
+                                           os.killpg(p.pid, signal.SIGTERM)
                                        stop = 1
-                            # use pygame to record video
-                            image = cam.get_image()
-                            count +=1
-                            img = pygame.transform.rotate(image,270)
-                            img = pygame.transform.flip(img, True, False)
-                            img = pygame.surfarray.array3d(img)
-                            frame = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                            output.write(frame)
-                            # show frame during recording
-                            if count == sframe:
-                                count = 0
-                                imageq = pygame.transform.scale(image, [preview_width,preview_height])
-                                catSurfaceObj = imageq
-                                windowSurfaceObj.blit(catSurfaceObj,(0,0))
-                                pygame.draw.rect(windowSurfaceObj,(255,0,0),Rect(10,10,20,20))
-                                pygame.display.update()
-                        cam.stop()
-                        output.release()
                     button(0,0)
                     text(0,1,0,1,"CAPTURE",ft,7)
                     text(0,1,1,1,"Still",ft,7)
