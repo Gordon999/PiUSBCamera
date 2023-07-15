@@ -336,7 +336,7 @@ while True:
                         # make video filename YYMMDDHHMMSS.mp4
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
-                        cmd = 'ffmpeg -f v4l2 -framerate 10 -video_size ' + str(video_width) + "x" + str(video_height) + ' -i /dev/video0 ' + vid_dir + timestamp + '.mp4'
+                        cmd = 'ffmpeg -f v4l2 -framerate 10 -video_size ' + str(video_width) + "x" + str(video_height) + ' -i ' + path + ' + vid_dir + timestamp + '.mp4'
                         p = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
                         stop = 0
                         count = 0
