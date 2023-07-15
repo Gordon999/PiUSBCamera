@@ -354,6 +354,7 @@ while True:
                                        poll = p.poll()
                                        if poll == None:
                                            os.killpg(p.pid, signal.SIGTERM)
+                                           time.sleep(5)
                                        stop = 1
                     button(0,0)
                     text(0,1,0,1,"CAPTURE",ft,7)
