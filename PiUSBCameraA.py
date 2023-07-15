@@ -28,7 +28,7 @@ import subprocess
 import signal
 from datetime import timedelta
 
-# version 1.6, modified for Bullseye, HDMI Video Capture adaptor added
+# version 0.1
 
 # auto detect camera format
 auto_detect = 1 # set to 1 to enable auto detect, may override window, still and video resolution values set below
