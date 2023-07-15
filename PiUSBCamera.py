@@ -30,7 +30,7 @@ import signal
 # version 1.6, modified for Bullseye, HDMI Video Capture adaptor added
 
 # auto detect camera format
-auto_detect = 1 # set to 1 to enable auto detect, may override window and will override still resolution values set below
+auto_detect = 1 # set to 1 to enable auto detect, may override window, still and video resolution values set below
 
 # preview window
 preview_width  = 800
@@ -43,9 +43,6 @@ still_height = 960
 # video camera resolution
 video_width  = 1280
 video_height = 720
-
-# show every sframe during video recording
-sframe = 10
 
 # save pictures and videos to..
 # default directories and files
@@ -92,12 +89,14 @@ def camera_format():
     if w != 0 and h!= 0:
         still_width  = w
         still_height = h
-        #video_width  = w
-        #video_height = h
         if still_width < preview_width:
             preview_width = still_width
             preview_height = still_height
-    print ("Format set: " ,still_width," x" ,still_height)
+    if w < video_width or h < video_height:
+        video_width  = w
+        video_height = h
+    print ("Still Format set: " ,still_width," x" ,still_height)
+    print ("Video Format set: " ,video_width," x" ,video_height)
 
 # find camera
 if os.path.exists('/dev/video0'):
