@@ -1,4 +1,4 @@
-6# PiUSBCamera
+# PiUSBCamera
 
 
 Script to allow control of a USB Camera on a Pi, using v4l2-ctl, to allow parameters to be set and still pictures or videos to be taken. 
