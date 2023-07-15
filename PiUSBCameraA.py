@@ -28,7 +28,7 @@ import subprocess
 import signal
 from datetime import timedelta
 
-# version 0.1
+# version 0.2, modified to add audio to videos
 
 # auto detect camera format
 auto_detect = 1 # set to 1 to enable auto detect, may override window, still and video resolution values set below
@@ -160,7 +160,10 @@ def text(row,fColor,top,upd,msg,fsize,bcolor):
         fontObj = pygame.font.Font(None, int(fsize))
     msgSurfaceObj = fontObj.render(msg, False, Color)
     msgRectobj =  msgSurfaceObj.get_rect()
-    if top == 0:
+    if msg[0:9] == 'CAPTURING':
+        pygame.draw.rect(windowSurfaceObj,bColor,Rect(1,1,preview_width,ft + 10))
+        msgRectobj.topleft = (5, 3)
+    elif top == 0:
         pygame.draw.rect(windowSurfaceObj,bColor,Rect(bx+1,by+1,bw-4,int(bh/2)))
         msgRectobj.topleft = (bx + 5, by + 3)
     elif msg == "Still":
@@ -175,7 +178,9 @@ def text(row,fColor,top,upd,msg,fsize,bcolor):
        
     windowSurfaceObj.blit(msgSurfaceObj, msgRectobj)
     if upd == 1:
-       pygame.display.update(bx, by, bw, bh)
+        pygame.display.update(bx, by, bw, bh)
+    if msg[0:9] == 'CAPTURING':
+        pygame.display.update(5, 3, preview_width,ft + 12)
 
 txt = "lsusb > usb_list.txt"
 os.system(txt)
@@ -347,16 +352,16 @@ while True:
                         pygame.image.save(pic_image,fname)
                         cam.stop()
                     else:
-                        #Capture video from webcam (NO AUDIO!!)
+                        #Capture video from webcam with AUDIO
                         button(0,1)
                         text(0,3,0,1,"RECORDING",ft,0)
                         text(0,3,1,1,"Video",ft,0)
-                        
                         # make video filename YYMMDDHHMMSS.mp4
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
-                        cmd = 'ffmpeg -f v4l2 -framerate 10 -video_size ' + str(video_width) + "x" + str(video_height) + ' -i ' + path + ' -ar 44100 -f pulse -thread_queue_size 5000 -i default -codec:a aac -t 0' + str(td) + ' ' + vid_dir + timestamp + '.mp4'
-                        print(cmd)
+                        text(0,3,0,0,"CAPTURING: " + vid_dir + timestamp + '.mp4',ft,0)
+                        cmd = 'ffmpeg -f v4l2 -framerate 25 -video_size ' + str(video_width) + "x" + str(video_height) + ' -i ' + path + ' -ar 44100 -f pulse -thread_queue_size 5000 -i default -codec:a aac -t 0' + str(td) + ' ' + vid_dir + timestamp + '.mp4'
+                        # print(cmd)
                         os.system(cmd)
                     button(0,0)
                     text(0,1,0,1,"CAPTURE  " + str(video_time),ft,7)
