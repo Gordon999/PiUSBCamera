@@ -28,14 +28,14 @@ import subprocess
 import signal
 from datetime import timedelta
 
-# version 0.2, modified to add audio to videos
+# version 0.3, modified to add audio to videos
 
 # auto detect camera format
-auto_detect = 1 # set to 1 to enable auto detect, may override window, still and video resolution values set below
+auto_detect = 0 # set to 1 to enable auto detect, may override window, still and video resolution values set below
 
 # preview window
-preview_width  = 800
-preview_height = 600
+preview_width  = 640
+preview_height = 480
 
 # still camera resolution 
 still_width  = 1280
@@ -46,7 +46,8 @@ video_width  = 1280
 video_height = 720
 
 # default video length (seconds)
-video_time = 30 
+video_time = 30
+form = 0
 
 # save pictures and videos to..
 # default directories and files
@@ -69,13 +70,20 @@ fv = int(bh/2.2)
 pygame.init()
 pygame.camera.init()
 
+if auto_detect == 0:
+    formats = []
+    aformat = str(video_width) + "x" + str(video_height)
+    formats.append(aformat)
+    form = len(formats)-1
+
 def camera_format():
     # find formats, and set still width and height
-    global width,height,usb,preview_width,preview_height,video_width,video_height,still_width,still_height
+    global width,height,usb,preview_width,preview_height,video_width,video_height,still_width,still_height,formats,form
     txt = "v4l2-ctl -d " + str(usb) + " --list-formats-ext > cam_fmts.txt"
     os.system(txt)
     w = 0
     h = 0
+    formats = []
     with open("cam_fmts.txt", "r") as file:
         line = file.readline()
         while line:
@@ -90,6 +98,9 @@ def camera_format():
                         h = int(d)
                     if int(g) > w:
                         w = int(g)
+                    i = str(w) +"x" + str(h)
+                    if i not in formats:
+                        formats.append(i)
     if w != 0 and h!= 0:
         still_width  = w
         still_height = h
@@ -101,6 +112,9 @@ def camera_format():
         video_height = h
     print ("Still Format set: " ,still_width," x" ,still_height)
     print ("Video Format set: " ,video_width," x" ,video_height)
+    aformat = str(video_width) + "x" + str(video_height)
+    formats.append(aformat)
+    form = len(formats)-1
 
 # find camera
 if os.path.exists('/dev/video0'):
@@ -215,7 +229,6 @@ def camera_controls():
         defa = -1
         valu = -1
         for y in range(0,len(fet)):
-            #print (fet)
             name = fet[0]
             if fet[y][0:3] == "min":
                 minm = fet[y][4:]
@@ -243,7 +256,7 @@ def camera_controls():
                 defa = -1
                 valu = -1
     if len(parameters) > 0:
-        bh = int(preview_height/((len(parameters)/6)+2))
+        bh = int(preview_height/((len(parameters)/6)+3))
         bh = min(bh,80)
         ft = int(bh/2.2)
         ft = min(ft,20)
@@ -259,22 +272,24 @@ camera_controls()
 camera_controls()
 
 def setup_screen():
-    global parameters,preview_height,bh
-    for d in range(0,int(len(parameters)/6) + 1):
+    global parameters,preview_height,bh,form,formats
+    for d in range(0,int(len(parameters)/6) + 3):
         button(d,0)
-    button(int(preview_height/bh)-1,0)
+    button(int(preview_height/bh),0)
     text(0,1,0,1,"CAPTURE  " + str(video_time),ft,7)
     text(0,1,1,1,"Still",ft,7)
     text(0,1,1,1,"Video",ft,7)
+    text(1,1,0,1,"Video Format",ft,7)
+    text(1,3,1,1,str(formats[form]),ft,7)
     l = len(parameters)
     l = min(l,(int(preview_height/bh)-2)*6)
     for d in range(0,l,6):
-        text(int(d/6) + 1,5,0,1,parameters[d],ft,7)
-        text(int(d/6) + 1,3,1,1,str(parameters[d+5]),fv,7)
+        text(int(d/6) + 2,5,0,1,parameters[d],ft,7)
+        text(int(d/6) + 2,3,1,1,str(parameters[d+5]),fv,7)
         if int(parameters[d + 1]) != -1:
             j = 1 + int(int(parameters[d+5]) / (int(parameters[d + 2]) - int(parameters[d + 1]))  * bw)
-            pygame.draw.rect(windowSurfaceObj,(100,100,100),Rect(preview_width + 2,((int(d/6)+1) * bh)+2,j+1,5))
-            pygame.draw.rect(windowSurfaceObj,(255,1,1),Rect(preview_width + (j-5),((int(d/6)+1) * bh) + 2,8,5))
+            pygame.draw.rect(windowSurfaceObj,(100,100,100),Rect(preview_width + 2,((int(d/6)+2) * bh)+2,j+1,5))
+            pygame.draw.rect(windowSurfaceObj,(255,1,1),Rect(preview_width + (j-5),((int(d/6)+2) * bh) + 2,8,5))
     text(int(preview_height/bh)-1,3,0,1,"EXIT",fv,7)
     text(int(preview_height/bh)-1,2,1,1,"Refresh",fv,7)
     
@@ -313,7 +328,7 @@ while True:
                     button_col = 1
                 else:
                     button_col = 2
-                if button_row > 1 + len(parameters)/6:
+                if button_row > 2 + len(parameters)/6:
                     if mousex < preview_width + int(bw/2):
                         # exit
                         cam.stop()
@@ -360,8 +375,7 @@ while True:
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
                         text(0,3,0,0,"CAPTURING: " + vid_dir + timestamp + '.mp4',ft,0)
-                        cmd = 'ffmpeg -f v4l2 -framerate 30 -video_size ' + str(video_width) + "x" + str(video_height) + ' -i ' + path + ' -ar 44100 -f pulse -thread_queue_size 5000 -i default -codec:a aac -t 0' + str(td) + ' ' + vid_dir + timestamp + '.mp4'
-                        # print(cmd)
+                        cmd = 'ffmpeg -f v4l2 -framerate 30 -video_size ' + formats[form] + ' -i ' + path + ' -ar 44100 -f pulse -thread_queue_size 5000 -i default -codec:a aac -t 0' + str(td) + ' ' + vid_dir + timestamp + '.mp4'
                         os.system(cmd)
                     button(0,0)
                     text(0,1,0,1,"CAPTURE  " + str(video_time),ft,7)
@@ -378,38 +392,46 @@ while True:
                         cam = pygame.camera.Camera("/dev/video1",(preview_width,preview_height))
                         path = '/dev/video1'
                         cam.start()
-                    #cam = pygame.camera.Camera(path,(preview_width,preview_height))
-                    #cam.start()
+                elif button_row == 2 and event.button != 3:
+                    if mousex < preview_width + int(bw/2):
+                        form -= 1
+                        form = max(form,0)
+                    else:
+                        form += 1
+                        form = min(form,len(formats)-1)
+                    text(1,3,1,1,str(formats[form]),ft,7)
+                    
                 else:
                     # change a camera parameter
-                    p = int(parameters[((button_row -2)*6) + 5])
-                    if mousey < ((button_row-1)*bh) + 8:
-                        p = int(((mousex-preview_width) / bw) * (int(parameters[((button_row -2)*6) + 2])-int(parameters[((button_row -2)*6) + 1])))
+                    p = int(parameters[((button_row - 3)*6) + 5])
+
+                    if mousey < ((button_row - 1)*bh) + 8:
+                        p = int(((mousex-preview_width) / bw) * (int(parameters[((button_row - 3)*6) + 2])-int(parameters[((button_row - 3)*6) + 1])))
                     elif mousex < preview_width + int(bw/2):
-                        if int(parameters[((button_row-2)*6) + 3]) == -1:
+                        if int(parameters[((button_row-3)*6) + 3]) == -1:
                            p -=1
                         else:
-                           p -=int(parameters[((button_row-2)*6) + 3])
-                        if int(parameters[((button_row-2)*6) + 1]) != -1:
+                           p -=int(parameters[((button_row-3)*6) + 3])
+                        if int(parameters[((button_row-3)*6) + 1]) != -1:
                            p = max(p,int(parameters[((button_row-2)*6) + 1]))
                         else:
                            p = max(p,0)
                     else:
-                        if int(parameters[((button_row-2)*6) + 3]) == -1:
+                        if int(parameters[((button_row-3)*6) + 3]) == -1:
                            p +=1
                         else:
-                           p +=int(parameters[((button_row-2)*6) + 3])
-                        if int(parameters[((button_row-2)*6) + 2]) != -1:
-                            p = min(p,int(parameters[((button_row-2)*6) + 2]))
+                           p +=int(parameters[((button_row-3)*6) + 3])
+                        if int(parameters[((button_row-3)*6) + 2]) != -1:
+                            p = min(p,int(parameters[((button_row-3)*6) + 2]))
                         else:
                             p = min(p,1)
-                    parameters[((button_row-2)*6) + 5] = str(p)
+                    parameters[((button_row-3)*6) + 5] = str(p)
                     text(int(button_row-1),3,1,1,str(p),fv,7)
-                    txt = "v4l2-ctl -c " + parameters[(button_row-2)*6] + "=" + str(p)
+                    txt = "v4l2-ctl -c " + parameters[(button_row-3)*6] + "=" + str(p)
                     os.system(txt)
-                    if int(parameters[((button_row-2)*6) + 1]) != -1:
+                    if int(parameters[((button_row-3)*6) + 1]) != -1:
                         pygame.draw.rect(windowSurfaceObj,greyColor,Rect(preview_width,(int(button_row-1) * bh) + 2,bw,5))
-                        j = int(int(parameters[((button_row-2)*6) + 5]) / (int(parameters[((button_row-2)*6) + 2]) - int(parameters[((button_row-2)*6) + 1]))  * (bw))
+                        j = int(int(parameters[((button_row-3)*6) + 5]) / (int(parameters[((button_row-3)*6) + 2]) - int(parameters[((button_row-3)*6) + 1]))  * (bw))
                         pygame.draw.rect(windowSurfaceObj,(100,100,100),Rect(preview_width + 2,(int(button_row-1) * bh) + 2,j+1,5))
                         pygame.draw.rect(windowSurfaceObj,(255,1,1),Rect(preview_width + (j-5),(int(button_row-1) * bh) + 2,8,5))
 
