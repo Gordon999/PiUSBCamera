@@ -28,14 +28,14 @@ import subprocess
 import signal
 from datetime import timedelta
 
-# version 0.3, modified to add audio to videos
+# version 0.4, modified to add audio to videos
 
 # auto detect camera format
-auto_detect = 0 # set to 1 to enable auto detect, may override window, still and video resolution values set below
+auto_detect = 1 # set to 1 to enable auto detect, may override window, still and video resolution values set below
 
 # preview window
-preview_width  = 640
-preview_height = 480
+preview_width  = 800
+preview_height = 600
 
 # still camera resolution 
 still_width  = 1280
@@ -47,7 +47,9 @@ video_height = 720
 
 # default video length (seconds)
 video_time = 30
-form = 0
+
+# framerate
+framerate  = 30
 
 # save pictures and videos to..
 # default directories and files
@@ -70,6 +72,7 @@ fv = int(bh/2.2)
 pygame.init()
 pygame.camera.init()
 
+form = 0
 if auto_detect == 0:
     formats = []
     aformat = str(video_width) + "x" + str(video_height)
@@ -98,7 +101,7 @@ def camera_format():
                         h = int(d)
                     if int(g) > w:
                         w = int(g)
-                    i = str(w) +"x" + str(h)
+                    i = str(g) +"x" + str(d)[:-1]
                     if i not in formats:
                         formats.append(i)
     if w != 0 and h!= 0:
@@ -375,7 +378,7 @@ while True:
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
                         text(0,3,0,0,"CAPTURING: " + vid_dir + timestamp + '.mp4',ft,0)
-                        cmd = 'ffmpeg -f v4l2 -framerate 30 -video_size ' + formats[form] + ' -i ' + path + ' -ar 44100 -f pulse -thread_queue_size 5000 -i default -codec:a aac -t 0' + str(td) + ' ' + vid_dir + timestamp + '.mp4'
+                        cmd = 'ffmpeg -f v4l2 -framerate ' + str(framerate) + ' -video_size ' + formats[form] + ' -i ' + path + ' -ar 44100 -f pulse -thread_queue_size 5000 -i default -codec:a aac -t 0' + str(td) + ' ' + vid_dir + timestamp + '.mp4'
                         os.system(cmd)
                     button(0,0)
                     text(0,1,0,1,"CAPTURE  " + str(video_time),ft,7)
