@@ -22,9 +22,9 @@ To get it to work under Bullseye try...
 
 sudo apt install libsdl2-ttf-2.0-0
 
-and
+and if using Buster or Bullseye (not Bookworm)
 
-python3 -m pip3 install -U pygame --user ( if you get an error try pip instead of pip3)
+python3 -m pip install -U pygame --user
 
 ## Screenshot
 
