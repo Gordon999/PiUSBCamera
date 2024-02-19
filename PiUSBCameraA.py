@@ -22,7 +22,6 @@ import pygame, sys
 from pygame.locals import *
 import pygame.camera
 import datetime
-import cv2
 import time
 import subprocess
 import signal
