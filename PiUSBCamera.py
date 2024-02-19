@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-"""Copyright (c) 2023
+"""Copyright (c) 2024
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -22,12 +22,11 @@ import pygame, sys
 from pygame.locals import *
 import pygame.camera
 import datetime
-import cv2
 import time
 import subprocess
 import signal
 
-# version 1.6, modified for Bullseye, HDMI Video Capture adaptor added
+# version 1.7, modified for Bullseye, HDMI Video Capture adaptor added
 
 # auto detect camera format
 auto_detect = 1 # set to 1 to enable auto detect, may override window, still and video resolution values set below
@@ -68,11 +67,11 @@ pygame.camera.init()
 def camera_format():
     # find formats, and set still width and height
     global width,height,usb,preview_width,preview_height,video_width,video_height,still_width,still_height
-    txt = "v4l2-ctl -d " + str(usb) + " --list-formats-ext > cam_fmts.txt"
+    txt = "v4l2-ctl -d " + str(usb) + " --list-formats-ext > /run/shm/cam_fmts.txt"
     os.system(txt)
     w = 0
     h = 0
-    with open("cam_fmts.txt", "r") as file:
+    with open("/run/shm/cam_fmts.txt", "r") as file:
         line = file.readline()
         while line:
             line = file.readline()
@@ -98,24 +97,25 @@ def camera_format():
     print ("Still Format set: " ,still_width," x" ,still_height)
     print ("Video Format set: " ,video_width," x" ,video_height)
 
-# find camera
-if os.path.exists('/dev/video0'):
-    usb = 0
-    if auto_detect == 1:
-        camera_format()
-    cam = pygame.camera.Camera("/dev/video0",(preview_width,preview_height))
-    path = '/dev/video0'
-    cam.start()
-elif os.path.exists('/dev/video1'):
-    usb = 1
-    if auto_detect == 1:
-        camera_format()
-    cam = pygame.camera.Camera("/dev/video1",(preview_width,preview_height))
-    path = '/dev/video1'
-    cam.start()
-else:
-    print ("No USB Camera Found")
-    sys.exit()
+# find USB camera
+cam1 = -1
+x = 0
+while cam1 == -1 and x < 42:
+    txt = "v4l2-ctl -d " + str(x) + " --list-ctrls > /run/shm/cam_ctrls.txt"
+    os.system(txt)
+    ctrls = []
+    with open("/run/shm/cam_ctrls.txt", "r") as file:
+        line = file.readline()
+        while line:
+            ctrls.append(line)
+            line = file.readline()
+    if 'User Controls\n' in ctrls and ('Camera Controls\n' in ctrls):
+        cam1 = x
+    else:
+        x +=1
+
+if cam1 == -1:
+    print(" No USB camera found !!")
 
 global greyColor, redColor, greenColor, blueColor, dgryColor, lgryColor, blackColor, whiteColor, purpleColor, yellowColor
 lgryColor =   pygame.Color(192, 192, 192)
@@ -187,11 +187,11 @@ with open("usb_list.txt", "r") as file:
        
 def camera_controls():
     # find camera controls
-    global usb,parameters,preview_height,bh,ft,fv,text
-    txt = "v4l2-ctl -l -d " + str(usb) + " > cam_ctrls.txt"
+    global cam1,parameters,preview_height,bh,ft,fv,text
+    txt = "v4l2-ctl -l -d " + str(cam1) + " > /run/shm/cam_ctrls.txt"
     os.system(txt)
     config = []
-    with open("cam_ctrls.txt", "r") as file:
+    with open("/run/shm/cam_ctrls.txt", "r") as file:
         line = file.readline()
         while line:
             config.append(line.strip())
@@ -206,7 +206,6 @@ def camera_controls():
         defa = -1
         valu = -1
         for y in range(0,len(fet)):
-            #print (fet)
             name = fet[0]
             if fet[y][0:3] == "min":
                 minm = fet[y][4:]
@@ -247,6 +246,10 @@ pygame.display.set_caption('Pi USB Camera')
 
 camera_controls()
 camera_controls()
+
+# start camera
+cam = pygame.camera.Camera("/dev/video" + str(cam1),(preview_width,preview_height))
+cam.start()
 
 def setup_screen():
     global parameters,preview_height,bh
@@ -291,7 +294,7 @@ while True:
             # set camera to factory defaults (click on picture)
             if mousex < preview_width and mousey < preview_height:
                 for h in range(0,len(parameters),6):
-                    txt = "v4l2-ctl -c " + parameters[h] + "=" + str(parameters[h+4])
+                    txt = "v4l2-ctl --device=/dev/video" + str(cam1) + " -c " + parameters[h] + "=" + str(parameters[h+4])
                     os.system(txt)
                 camera_controls()
                 setup_screen()
@@ -318,7 +321,7 @@ while True:
                     cam.stop()
                     if mousex < preview_width + int(bw/2):
                         # set to still camera resolution
-                        cam = pygame.camera.Camera(path,(still_width,still_height))
+                        cam = pygame.camera.Camera("/dev/video" + str(cam1),(still_width,still_height))
                         cam.start()
                         pic_image = cam.get_image()
                         # make still filename YYMMDDHHMMSS.jpg
@@ -336,7 +339,7 @@ while True:
                         # make video filename YYMMDDHHMMSS.mp4
                         now = datetime.datetime.now()
                         timestamp = now.strftime("%y%m%d%H%M%S")
-                        cmd = 'ffmpeg -f v4l2 -framerate 10 -video_size ' + str(video_width) + "x" + str(video_height) + ' -i ' + path + ' ' + vid_dir + timestamp + '.mp4'
+                        cmd = 'ffmpeg -f v4l2 -framerate 10 -video_size ' + str(video_width) + "x" + str(video_height) + ' -i ' + "/dev/video" + str(cam1) + ' ' + vid_dir + timestamp + '.mp4'
                         p = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
                         stop = 0
                         count = 0
@@ -362,18 +365,8 @@ while True:
                     text(0,1,1,1,"Still",ft,7)
                     text(0,1,1,1,"Video",ft,7)
                     # restart preview
-                    if os.path.exists('/dev/video0'):
-                        usb = 0
-                        cam = pygame.camera.Camera("/dev/video0",(preview_width,preview_height))
-                        path = '/dev/video0'
-                        cam.start()
-                    elif os.path.exists('/dev/video1'):
-                        usb = 1
-                        cam = pygame.camera.Camera("/dev/video1",(preview_width,preview_height))
-                        path = '/dev/video1'
-                        cam.start()
-                    #cam = pygame.camera.Camera(path,(preview_width,preview_height))
-                    #cam.start()
+                    cam = pygame.camera.Camera("/dev/video" + str(cam1),(preview_width,preview_height))
+                    cam.start()
                 else:
                     # change a camera parameter
                     p = int(parameters[((button_row -2)*6) + 5])
@@ -399,7 +392,7 @@ while True:
                             p = min(p,1)
                     parameters[((button_row-2)*6) + 5] = str(p)
                     text(int(button_row-1),3,1,1,str(p),fv,7)
-                    txt = "v4l2-ctl -c " + parameters[(button_row-2)*6] + "=" + str(p)
+                    txt = "v4l2-ctl --device=/dev/video" + str(cam1) + " -c " + parameters[(button_row-2)*6] + "=" + str(p)
                     os.system(txt)
                     if int(parameters[((button_row-2)*6) + 1]) != -1:
                         pygame.draw.rect(windowSurfaceObj,greyColor,Rect(preview_width,(int(button_row-1) * bh) + 2,bw,5))
