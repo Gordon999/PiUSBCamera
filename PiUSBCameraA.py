@@ -27,7 +27,7 @@ import subprocess
 import signal
 from datetime import timedelta
 
-# version 1.7, modified to add audio to videos
+# version 1.8, modified to add audio to videos
 
 # auto detect camera format
 auto_detect = 1 # set to 1 to enable auto detect, may override window, still and video resolution values set below
@@ -418,7 +418,7 @@ while True:
                         else:
                            p -=int(parameters[((button_row-3)*6) + 3])
                         if int(parameters[((button_row-3)*6) + 1]) != -1:
-                           p = max(p,int(parameters[((button_row-2)*6) + 1]))
+                           p = max(p,int(parameters[((button_row-3)*6) + 1]))
                         else:
                            p = max(p,0)
                     else:
@@ -432,7 +432,7 @@ while True:
                             p = min(p,1)
                     parameters[((button_row-3)*6) + 5] = str(p)
                     text(int(button_row-1),3,1,1,str(p),fv,7)
-                    txt = "v4l2-ctl --device=/dev/video" + str(cam1) + " -c " + parameters[(button_row-2)*6] + "=" + str(p)
+                    txt = "v4l2-ctl --device=/dev/video" + str(cam1) + " -c " + parameters[(button_row-3)*6] + "=" + str(p)
                     os.system(txt)
                     if int(parameters[((button_row-3)*6) + 1]) != -1:
                         pygame.draw.rect(windowSurfaceObj,greyColor,Rect(preview_width,(int(button_row-1) * bh) + 2,bw,5))
