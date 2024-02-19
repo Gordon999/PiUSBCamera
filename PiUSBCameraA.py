@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-"""Copyright (c) 2023
+"""Copyright (c) 2024
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -28,7 +28,7 @@ import subprocess
 import signal
 from datetime import timedelta
 
-# version 0.4, modified to add audio to videos
+# version 1.7, modified to add audio to videos
 
 # auto detect camera format
 auto_detect = 1 # set to 1 to enable auto detect, may override window, still and video resolution values set below
@@ -82,7 +82,7 @@ if auto_detect == 0:
 def camera_format():
     # find formats, and set still width and height
     global width,height,usb,preview_width,preview_height,video_width,video_height,still_width,still_height,formats,form
-    txt = "v4l2-ctl -d " + str(usb) + " --list-formats-ext > cam_fmts.txt"
+    txt = "v4l2-ctl -d " + str(cam1) + " --list-formats-ext > cam_fmts.txt"
     os.system(txt)
     w = 0
     h = 0
@@ -119,24 +119,33 @@ def camera_format():
     formats.append(aformat)
     form = len(formats)-1
 
-# find camera
-if os.path.exists('/dev/video0'):
-    usb = 0
-    if auto_detect == 1:
-        camera_format()
-    cam = pygame.camera.Camera("/dev/video0",(preview_width,preview_height))
-    path = '/dev/video0'
-    cam.start()
-elif os.path.exists('/dev/video1'):
-    usb = 1
-    if auto_detect == 1:
-        camera_format()
-    cam = pygame.camera.Camera("/dev/video1",(preview_width,preview_height))
-    path = '/dev/video1'
-    cam.start()
-else:
-    print ("No USB Camera Found")
+# find USB camera
+cam1 = -1
+x = 0
+while cam1 == -1 and x < 42:
+    txt = "v4l2-ctl -d " + str(x) + " --list-ctrls > /run/shm/cam_ctrls.txt"
+    os.system(txt)
+    ctrls = []
+    with open("/run/shm/cam_ctrls.txt", "r") as file:
+        line = file.readline()
+        while line:
+            ctrls.append(line)
+            line = file.readline()
+    if 'User Controls\n' in ctrls and ('Camera Controls\n' in ctrls):
+        cam1 = x
+    else:
+        x +=1
+
+if cam1 == -1:
+    print(" No USB camera found !!")
     sys.exit()
+
+if auto_detect == 1:
+        camera_format()
+cam = pygame.camera.Camera("/dev/video" + str(cam1),(preview_width,preview_height))
+path = '/dev/video' + str(cam1)
+cam.start()
+    
 
 global greyColor, redColor, greenColor, blueColor, dgryColor, lgryColor, blackColor, whiteColor, purpleColor, yellowColor
 lgryColor =   pygame.Color(192, 192, 192)
@@ -214,7 +223,7 @@ with open("usb_list.txt", "r") as file:
 def camera_controls():
     # find camera controls
     global usb,parameters,preview_height,bh,ft,fv,text
-    txt = "v4l2-ctl -l -d " + str(usb) + " > cam_ctrls.txt"
+    txt = "v4l2-ctl -l -d " + str(cam1) + " > cam_ctrls.txt"
     os.system(txt)
     config = []
     with open("cam_ctrls.txt", "r") as file:
@@ -385,16 +394,10 @@ while True:
                     text(0,1,1,1,"Still",ft,7)
                     text(0,1,1,1,"Video",ft,7)
                     # restart preview
-                    if os.path.exists('/dev/video0'):
-                        usb = 0
-                        cam = pygame.camera.Camera("/dev/video0",(preview_width,preview_height))
-                        path = '/dev/video0'
-                        cam.start()
-                    elif os.path.exists('/dev/video1'):
-                        usb = 1
-                        cam = pygame.camera.Camera("/dev/video1",(preview_width,preview_height))
-                        path = '/dev/video1'
-                        cam.start()
+                    cam = pygame.camera.Camera("/dev/video" + str(cam1),(preview_width,preview_height))
+                    path = '/dev/video' + str(cam1)
+                    cam.start()
+                    
                 elif button_row == 2 and event.button != 3:
                     if mousex < preview_width + int(bw/2):
                         form -= 1
@@ -430,7 +433,7 @@ while True:
                             p = min(p,1)
                     parameters[((button_row-3)*6) + 5] = str(p)
                     text(int(button_row-1),3,1,1,str(p),fv,7)
-                    txt = "v4l2-ctl -c " + parameters[(button_row-3)*6] + "=" + str(p)
+                    txt = "v4l2-ctl --device=/dev/video" + str(cam1) + " -c " + parameters[(button_row-2)*6] + "=" + str(p)
                     os.system(txt)
                     if int(parameters[((button_row-3)*6) + 1]) != -1:
                         pygame.draw.rect(windowSurfaceObj,greyColor,Rect(preview_width,(int(button_row-1) * bh) + 2,bw,5))
