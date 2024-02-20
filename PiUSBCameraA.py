@@ -27,7 +27,7 @@ import subprocess
 import signal
 from datetime import timedelta
 
-# version 1.8, modified to add audio to videos
+# version 1.9, modified to add audio to videos
 
 # auto detect camera format
 auto_detect = 1 # set to 1 to enable auto detect, may override window, still and video resolution values set below
@@ -327,7 +327,7 @@ while True:
             # set camera to factory defaults (click on picture)
             if mousex < preview_width and mousey < preview_height:
                 for h in range(0,len(parameters),6):
-                    txt = "v4l2-ctl -c " + parameters[h] + "=" + str(parameters[h+4])
+                    txt = "v4l2-ctl --device=/dev/video" + str(cam1) + " -c " + parameters[h] + "=" + str(parameters[h+4])
                     os.system(txt)
                 camera_controls()
                 setup_screen()
